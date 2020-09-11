@@ -4,7 +4,7 @@ The R package `vimpclust` implements methods related to sparse clustering and va
 
 Details are available is the following vignettes:
 
-https://chavent.github.io/PCAmixdata
+https://chavent.github.io/vimpclust/doc/sparsewkm.html
 
 https://chavent.github.io/PCAmixdata/supplementary.html
 
