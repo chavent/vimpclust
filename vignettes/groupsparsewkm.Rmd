@@ -1,0 +1,181 @@
+---
+title: "Group-sparse weighted k-means for numerical data"
+author: "Marie Chavent and Alex Mourer and Madalina Olteanu"
+date: "`r Sys.Date()`"
+output: 
+  html_vignette: 
+    toc: no
+  header-includes:
+    - \usepackage{bbm}
+bibliography: bibESANN.bib
+link-citations: yes
+vignette: >
+  %\VignetteIndexEntry{Group-sparse weighted k-means for numerical data}
+  %\usepackage[UTF-8]{inputenc}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,eval=TRUE,fig.align="center",fig.width = 7,fig.height = 5)
+options(digits = 2)
+```
+$\DeclareMathOperator{\R}{\mathbb{R}}$
+
+## Basic function description 
+
+`groupsparsewkm` is designed for clustering numerical data described by a set of features, while simultaneously selecting the most discriminant groups of features. The groups of features are supposed priorly known and provided as an argument to the function. This implementation generalizes the sparse $k$-means algorithm introduced in @sparsekmeans, and is based on the optimization of a penalized weighted between-class variance criterion. For more technical details on the penalty term and on the optimization procedure, one may refer to @Sparsegroupkmeans.
+
+### Arguments
+
+Several arguments may be passed to `groupsparsewkm`, but only the first two are required:
+
+* `X` is the numerical data that will be clustered. It should have the format of a matrix or a data frame, and all entries should be numerical features. Only the features one would include in the clustering should be present. Column and row names may be supplied to ease the interpretation;
+* `centers` is the number of clusters to be computed.
+
+The rest of the arguments are related to the choices of the regularization parameter, the prior partitioning of the features into groups, the number of iterations and random starts in the algoritm or the fact of scaling the data. Default values are fixed for these parameters, one may see `help(groupsparsewkm)` for further details. 
+
+### Output 
+
+The `groupsparsewkm` function returns an object of class `spwkm` (see `help(groupsparsewkm)` for further details on this class).
+
+
+## A case study: `Mice` dataset 
+
+The `DataMice` dataset consists of repeated measurements of 68 proteins on a sample of 72 mice (12 or 15 values independently measured for each protein). The [data](https://archive.ics.uci.edu/ml/datasets/Mice+Protein+Expression#)  was first described in @Higuera, and it was processed here in order to discard some proteins and measurements containing missing data. 
+
+```{r}
+library(vimpclust)
+data(DataMice)
+DataMice[1:10, 1:4]
+```
+
+The data may be priorly split as follows: 
+
+* According to the `Genotype`, 38 mice are in the control (c) group, and 34 in the trisomic (t) group;
+* According to the `Behavior`, 35 mice were stimulated to learn (CS), and 37 were not (SC);
+* According to the `Treatment`, 38 mice received one (m), and 34 did not (s).
+
+When mixing all the information, the data may be priorly split into 8 clusters, with the following frequencies:
+
+```{r}
+summary(DataMice$Class.mouse)
+```
+
+Further details about this dataset may be found with `help(DataMice)`.
+
+### Training the `groupsparsewkm` function
+
+For this dataset, the groups of features may be naturally defined: each protein represents a group, and the measurements associated to it represent the features of the group. The `index` vector, containing the index of the group associated to each feature, is created using the column names of `DataMice`. 
+
+```{r,  message=FALSE, warning=FALSE}
+names(DataMice)[1:20]
+index <- unlist(strsplit(names(DataMice)[1:(dim(DataMice)[2]-5)], split="_"))
+index <- as.numeric(index[(1:length(index)%%4==2)])
+```
+
+The number of clusters, `centers` is fixed to 8, based on the additional prior knowledge on the dataset that was described above. Although there is no reason for an unsupervised method to retrieve the partitioning defined by some supplementary features, the comparison of the unsupervised clustering with a prior partitioning is interesting for illustration. 
+
+All features are scaled to have zero mean and unit variance with the default setting of the `groupsparsewkm` function.
+
+```{r,  message=FALSE, warning=FALSE}
+set.seed(1407)
+res.mice <- groupsparsewkm(X = DataMice[,(1:length(index))], centers = 8, index = index, verbose = 1)
+```
+
+According to the above, the algorithm converged for all values of `lambda`. In some cases, the stopping criterion may not be satisfied
+and the convergence over the weights `w` might not be achieved. If this were the case, one should increase the number of iterations `itermaxw`, which by default is set to 20. Note however that setting a larger value for this parameter would increase the computational
+time, since a full $k$-means algorithm is trained at each iteration. 
+
+### Results
+
+The weights associated to each group of features may be found in the matrix `Wg`. These weights illustrate the contribution of each group of features to the clustering and may be seen as a measure of the importance of each group for the clustering. Each column of `Wg` contains the weights computed for a given value of the regularization parameter `lambda`. The default setting in the `groupsparsewkm` function selects 20 values for the regularization pameter `lambda`, chosen uniformly between 0 (no regularization) and a maximum value automatically tuned.
+
+```{r}
+res.mice$Wg[1:20,1:5]
+```
+
+Each row of `Wg` contains the weights associated to a group of features for all the values of the regularization parameter, or the so-called **regularization paths**. These may be further illustrated graphically, by calling the `plot` function for the `spwkm` class (see `help(plot.spwkm)` for more details).
+
+```{r}
+plot(res.mice, what="weights.groups")
+```
+
+For the `Mice` data, one may see that four proteins particularly (associated to groups 1, 2, 11 and 21) appear as the most discriminant, as the regularization parameter increases. Other proteins, such as the one associated to group 30 have an interesting behaviour: its weight becomes large for large values of the regularization term, thus for a heavy penalty term. Indeed, at the 13th value of the `lambda` 
+a significant drop in the number of selected groups occurs, from 41 selected groups to 13. It is at this point that group 30 becomes
+extremely significant for the clustering.
+
+If one wants to look into more details and assess the respective contribution of each feature, she may look at the matrix `W`, which contains the weights associated to each feature. These weights may be read as the relative importance of each feature for the clustering. Depending on the number of features in each group, `W` may potentially be a large matrix, and one may also want to focus on the features belonging to non-zero weigthed groups.  
+
+```{r}
+res.mice$W[1:20,1:5]
+```
+
+The regularization path for each feature may be also illustrated using the `plot` function. For the `Mice` dataset, one may easily see that the features within each group are quite redundant (let us recall here that one group is made of repeated measurements of the same protein), their regularization paths being very similar. 
+
+```{r,  message=FALSE, warning=FALSE}
+plot(res.mice, what = "weights.features")
+```
+
+By specifying the supplementary argument `Which` in the `plot` function, one may focus on the regularization paths of specific groups of features, represented either as the regularization path of the group, or the regularization paths of the corresponding features. Here below, proteins 1, 2 and 30 were selected for illustration. 
+
+```{r,  message=FALSE, warning=FALSE}
+plot(res.mice, what = "weights.groups", Which=c(1,2,30))
+```
+
+```{r,  message=FALSE, warning=FALSE}
+plot(res.mice, what = "weights.features", Which=c(1,2,30))
+```
+
+#### Additional plots 
+
+A valuable piece of information is given by the number of selected groups or the number of selected features for a given value of the regularization parameter `lambda`. The evolution of the number of features may be graphically illustrated as follows: 
+
+```{r}
+plot(res.mice, what="sel.groups")
+```
+
+```{r}
+plot(res.mice, what="sel.features")
+```
+
+Since the measurements for each protein are quite redundant, and the number of measurements for each protein quite similar, the curves representing the evolution of the selected groups and of the selected features are very similar. A significant drop may be noticed after the 12th value of `lambda`, where only 13 proteins among the 68 are preserved for clustering.
+
+Besides the selected number of groups of features or the selected number of features, the evolution of some criteria related to the quality of the clustering are equally important for understanding and commenting the results. 
+
+For example, using the argument `what="expl.var"` in the `plot` function, one may illustrate the evolution of the explained variance, as a function of the regularization parameter `lambda`. The explained variance is computed as the ratio between the between-class variance and the global variance in the data, and represents the ratio of information explained by the 
+clustering. Let us remark that this criterion is independent of the sparse algorithm trained here, which maximizes the weighted between sum-of-squares penalized by a group-penalty term. The explained variance, computed on all features and without applying any weights, illustrates how the information is preserved when discarding an increasing number of features. 
+
+```{r}
+plot(res.mice, what="expl.var")
+```
+
+The number-of-selected-groups curve and the explained-variance curve may be used to select the appropriate regularization parameter `lambda` for the clustering. A **good choice** of `lambda` should preserve a high percentage of variance explained by the clustering, while discarding a large number of features. This actually amounts to a trade-off between the quality of the model and its relative parcimony. With this is mind, one may easily see that by selecting `lambda=0.45`, the explained variance remains very close to when using all features, whereas the number of groups and the number of features was reduced by a third. For `lambda=0.48`, if one accepts to "loose" a third of the explained variance (while remaining above 30%), the number of groups and the number of features may be reduced by more than 80% (13 groups are preserved among 68, and 171 features among 900). Hence, one may use this algorithm for drastically reducing the dimensionality of the data, while still preserving a significant clustering. 
+
+Another graphical option includes the illustration of the weighthed explained variance (the weights computed by the algorithm are taken into account and applied to the features when computing the between sum-of-squares and the total sum-of-squares). In this case, since the criterion takes into account the most discriminant features only, it is increasing with the penalty, and a significant jump may be seen 
+at the same spot as for the explained variance, except that here, the weighted explained variance improves by more than 20%.
+
+```{r}
+plot(res.mice, what="w.expl.var")
+```
+
+Other criteria such as the gap statistic could be efficiently used for selecting the regularization parameter (and also the number of clusters). They are not implemented here (**yet!**), but may be easily retrived in other packages and combined with `spwkm` objects. 
+
+#### Comparing the clustering with the "ground truth" 
+
+As mentioned above, the `DataMice` observations are known to belong to some priorly defined clusters, defined by the `Genotype`, `Treatment` or `Behaviour`. In order to compare the resulting clusterings of the group-sparse algorithm (for the various values of `lambda`) with the priorly defined clusters, the Adjusted Rand Index (ARI) is computed here below.
+
+```{r, message=FALSE}
+library(mclust)
+sapply(1:length(res.mice$lambda), function(x) {adjustedRandIndex(res.mice$cluster[,x],DataMice$Class.mouse)})
+sapply(1:length(res.mice$lambda), function(x) {adjustedRandIndex(res.mice$cluster[,x],DataMice$Genotype)})
+sapply(1:length(res.mice$lambda), function(x) {adjustedRandIndex(res.mice$cluster[,x],DataMice$Treatment)})
+sapply(1:length(res.mice$lambda), function(x) {adjustedRandIndex(res.mice$cluster[,x],DataMice$Behaviour)})
+```
+ 
+According to the above values, the 8 clusters computed with the sparse-group $k$-means algorithm are not much related to the 8 priorly defined clusters. As we've already mentioned, there is no prior reason for correlation between the clustering output and the partitioning defined by the `Genotype`, the `Treatment` and the `Behaviour`. The clusters identified by the algorithm may correspond to a completely different structure in the data. Nevertheless, we should mention here that the proteins identified by the algorithm as the 
+most discriminant or having significant weights for all values of `lambda` -- groups 1, 2, 10, 11, 21, 25, 30, 32, 68 -- correspond to those identified in @Higuera as discriminant for `Genotype`, `Treatment` or `Behaviour`. Furthermore, the algorithm implemented in `groupsparsewkm` has also the advantage of fully selecting or discarding one protein and its associated measurements thanks to the group approach. Group-sparse clustering is thus offering a complete approach for both clustering and selecting the most discriminant groups of features. 
+
+
+# Bibliography

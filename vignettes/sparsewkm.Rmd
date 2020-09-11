@@ -1,0 +1,170 @@
+---
+title: "Sparse weighted k-means for mixed data"
+author: "Marie Chavent and Alex Mourer and Madalina Olteanu"
+date: "`r Sys.Date()`"
+output: 
+  html_vignette: 
+    toc: no
+  header-includes:
+    - \usepackage{bbm}
+bibliography: bibESANN.bib
+link-citations: yes
+vignette: >
+  %\VignetteIndexEntry{Sparse weighted k-means for mixed data}
+  %\usepackage[UTF-8]{inputenc}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,eval=TRUE,fig.align="center",fig.width = 7,fig.height = 5)
+options(digits = 2)
+```
+$\DeclareMathOperator{\R}{\mathbb{R}}$
+
+## Basic function description
+
+`sparsewkm` is designed for performing sparse clustering of a dataset described by numerical, categorical, or mixed features. In this respect, it generalizes the sparse $k$-means algorithm introduced in @sparsekmeans for numerical features only. 
+
+The implementation is based on the optimization of a penalized between-class variance criterion. If the features used for clustering are numerical only, the algorithm reduces to the one in @sparsekmeans. If some or all the features are categorical, `sparsewkm` transforms the data using a factor analysis step (see @chavent2014multivariate for the preprocessing), and then trains a group-sparse $k$-means algorithm, each group being defined by the levels of one specific feature. For more technical details on the cost function and the optimization procedure, one may refer to @Sparsegroupkmeans.
+
+### Arguments
+
+Several arguments may be passed to `sparsewkm`, but only the first two are required:
+
+* `X` is the data to be clustered. It should be a data frame, and the categorical features should be provided as factors. Only the features one would include in the clustering should be present. Column and row names may be supplied to ease the interpretation. 
+
+* `centers` is the number of clusters to be computed.
+
+The rest of the arguments are related to the choices of the regularization parameter, or the number of iterations and random starts in the algoritm. Default values are fixed for these parameters, one may see `help(sparsewkm)` for further details. 
+
+### Output
+
+The `sparsewkm` function returns an object of class `spwkm` (see `help(sparsewkm)` for further details on this class).
+
+## A case study: `HDdata` dataset 
+
+The `HDdata` consists of 270 patients described by six numerical features and eight categorical ones. It was sampled from the [Cleveland Heart Disease Data](https://archive.ics.uci.edu/ml/datasets/Heart+Disease) found in the UCI machine learning repository. 
+
+Further details about this dataset may be found with `help(HDdata)`.
+
+```{r}
+library(vimpclust)
+head(HDdata)
+```
+
+### Training the `sparsewkm` function
+
+The `sparsewkm` function is applied to `HDdata` on all features except the last one, `HD`, which codes for the presence or the absence of a heart disease. `HD` was removed from the clustering, and will be used later as a control variable. Since the control variable has only two classes, the number of clusters is set to 2 with the argument `centers`. We shall check after the clustering procedure whether the algorithm retrieves these two classes.
+
+```{r}
+res <- sparsewkm(X = HDdata[,-14], centers = 2)
+```
+
+According to the above, the algorithm converged for all values of `lambda`. In some cases, the stopping criterion may not be satisfied
+and the convergence over the weights `w` might not be achieved. If this were the case, one should increase the number of iterations `itermaxw`, which by default is set to 20. Note however that setting a larger value for this parameter would increase the computational
+time, since a full $k$-means algorithm is trained at each iteration. 
+ 
+### Results
+
+The weights associated to each feature may be found in the matrix `W`. These weights illustrate the contribution of each feature, numerical or categorical, to the clustering, and may be seen as a measure of the relative importance of each feature in the clustering.
+
+Each column of `W` contains the weights computed for a given value of the regularization parameter `lambda`. The default setting in the `sparsewkm` function selects 20 values for `lambda`, chosen uniformly between 0 (no regularization) and a maximum value automatically tuned. 
+
+In the following, only the weights associated to the first 5 values of `lambda` are displayed. 
+
+```{r}
+res$W[,1:5]
+```
+
+One may see that, as `lambda` increases, the weights of some features are progressively set to 0. The evolution of the **regularization paths** for the features used in the clustering may be illustrated using the `plot` function for the `spwkm` class. With the default settings of this implementation, the paths associated to **numerical features** are drawn with **continuous lines**, while those associated to **categorical features** are drawn with **dotted lines**. 
+
+According to the results, the numerical features `maxhr` and `oldpeak`, and the categorical features `slope` and `exang` appear as the most discriminant for small values of `lambda`. As `lambda` increases,  `maxhr` only is selected by the algorithm. 
+
+```{r}
+plot(res, what="weights.features")
+```
+
+Furthermore, the weights associated to each level of the categorical features may be also displayed. These weights are stored in the matrix `Wm`. Similarly to `W`, each column of this matrix contains the weights -- associated either to the numerical features or to the levels of the categorical features -- for a given value of `lambda`. 
+
+We display here these weights asssociated to the first 5 values of `lambda`. 
+
+```{r}
+res$Wm[,1:5]
+```
+
+The regularization paths for the levels of the categorical features may be plotted using argument `what=weights.levels` in the `plot` function. This option provides a more detailed image of how each level in a categorical feature contributes to the clustering. One may see here, for instance, that only the first two levels of `slope` and one level of `exang` have particularly significant contributions. 
+
+```{r}
+plot(res, what="weights.levels")
+```
+
+Depending on the number of levels in the categorical features, `Wm` may potentially be quite a big matrix. One may chose to plot the regularization paths for some features only, whether numerical, or categorical. For doing this, it is enough to add the argument `Which` in the `plot` function and list the features (one should note here that after training the `sparsewkm` function, the features are ordered differently than in the input data, with the numerical features listed first; the argument `Which` takes into account the order in the `W` output matrix). 
+
+```{r}
+plot(res, what="weights.features", Which=c(4,5,11,12))
+```
+
+For the categorical features, one may equally plot the regularization paths of the associated levels, as we do here for `slope` and `exang`.  
+
+```{r}
+plot(res, what="weights.levels", Which=c(11,12))
+```
+
+### Additional plots
+
+The number of selected features and the number of selected levels for a given value of the regularization parameter `lambda` provide valuable information. These two criteria may be illustrated using options `what=sel.features` and `what=sel.levels` in the `plot` function. 
+
+```{r}
+plot(res, what="sel.features")
+plot(res, what="sel.levels")
+```
+
+The two curves are very similar and show how the number of selected features relevant for the clustering rapidly decreases with `lambda`. 
+
+Clustering may also be assessed using criteria based on the evolution of the explained variance. The latter is computed as the ratio between the between-class variance and the global variance in the data, and represents the ratio of information explained by the 
+clustering. The explained variance may be computed on all features used for clustering, without taking the weights into account, 
+or in a weighted fashion, by taking the computed weights into account and thus suppressing all features discarded by the algorithm.
+In the latter case and for large `lambda`, the explained weighted variance results in being computed using one feature only, `maxhr`. 
+
+```{r}
+plot(res, what="expl.var")
+plot(res, what="w.expl.var")
+```
+
+These two criteria, combined with the number of selected features, may be used to select the appropriate regularization parameter `lambda`. A **good choice** for `lambda` should preserve a high percentage of variance explained by the clustering, while discarding a large number of features. This amounts to a trade-off between the quality of the model and its parcimony. 
+
+One may remark that with the fifth value of the regularization parameter, `lambda=0.07`, the number of features is reduced by half, while the loss in the explained variance is close to 1%. One may notice also that the percentage of explained variance is very low for all clusterings, while the percetange of explained weighthed variance is significantly larger and increasing with the increasing penalty. This amounts to saying that most of the features in the dataset are not discriminant, and the global quality of the clustering, computed on all features, is rather poor. If only the most discriminant features are selected, the explained weighted variance largely increses, whereas the loss in the unweighted explained variance is minor. 
+
+Furthermore, if one selects the sixth value of the regularization parameter, `lambda=0.09`, only two features are kept for clustering. The loss in the unweighted explained variance is close to 2%, but the weighted explained variance gains more than 30%. 
+
+It appears, according to these remarks, that only very few features are actually playing a significant part in the clustering procedure. 
+If one prefers to discard most of the features, she may keep `maxhr` and `oldpeak`, with an explained variance of roughly 6.2% and an explained weighted variance of roughly 60%. If one wants a larger ratio of explained variance, she would also keep `age`, `numv`, `exang` and `slope` besides `maxhr` and `oldpeak`. In this case, the ratio of explained variance is about 7.5%, while the ratio of explained weighted variance drops to approximately 45%. Furthermore, according to the regularization paths, it appears that these six features are the most discriminant and the most important for the clustering. 
+
+#### Comparing the clustering with the "ground truth" 
+
+Since we have a control variable for the `HDdata`, we shall use it to compare three clustering produced by the algorithm, for three different values of `lambda`. The comparison criterion chosen here is the Adjusted Rand Index (ARI). We shall also display the confusion matrices for the first, fifth and sixth values of `lambda`.
+
+```{r, message=FALSE}
+library(mclust)
+sapply(c(1,5,6), function(x) {adjustedRandIndex(res$cluster[,x],HDdata$HD)})
+table(HDdata$HD, res$cluster[,1])
+table(HDdata$HD, res$cluster[,5])
+table(HDdata$HD, res$cluster[,6])
+```
+
+According to these results, the quality of the agreement between the clustering and the control variable is decreasing with larger penalties and fewer features kept for the clustering. Nevertheless, although the accuracy is deteriorated, reducing the number of features by half leads to a loss of 3.7% only in terms of accuracy, while reducing the number of features from 13 to 2 leads to a loss of 7%. It appears here that sparse clustering may be particularly useful if one wishes to find a trade-off between clustering quality and dimensionality, while putting forward the features which mostly contribute to the clustering.    
+
+We shall also mention here that the comparison with the control variable is done for illustration purposes only. Since sparse weighted $k$-means is an unsupervised method, there is no reason the clustering it builds correponds to some prior partitioning defined by some
+control variable.
+
+#### Cluster compostion 
+
+Eventually, once one selects an appropriate regularization parameter `lambda` and the associated clustering, she may consider cluster composition. Using the function `info_clust` in the package, she may display features distributions within the clusters (averages for numerical features, frequencies for categorical ones). This first insight may further be completed with a more thorough analysis, using some analysis of variance etc. 
+
+```{r}
+info_clust(res, 5, X = HDdata)
+```
+
+# Bibliography
