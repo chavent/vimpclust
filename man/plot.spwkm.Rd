@@ -17,25 +17,25 @@
 )
 }
 \arguments{
-\item{x}{an object of class \code{spwkm}.}
+\item{x}{An object of class \code{spwkm}.}
 
-\item{what}{a character string indicating which element of \code{x} to be plotted. See section
+\item{what}{A character string indicating which element of \code{x} to be plotted. See section
 "Details" below for further information.}
 
-\item{Which}{a numerical vector indexing the groups or the variables to be displayed. See section
+\item{Which}{A numerical vector indexing the groups or the variables to be displayed. See section
 "Details" below for further information.}
 
-\item{xtitle}{the title of the x-axis.}
+\item{xtitle}{The title of the x-axis.}
 
-\item{ytitle}{the title of the y-axis.}
+\item{ytitle}{The title of the y-axis.}
 
-\item{title}{the title of the graphic.}
+\item{title}{The title of the graphic.}
 
-\item{showlegend}{a boolean. If \code{showlegend=NULL} (default value), the legend is displayed.}
+\item{showlegend}{A boolean. If \code{showlegend=NULL} (default value), the legend is displayed.}
 
-\item{legendtitle}{the title of the legend.}
+\item{legendtitle}{The title of the legend.}
 
-\item{\ldots}{arguments to be passed to methods, not used here.}
+\item{...}{Further arguments to the \code{plot} function.}
 }
 \value{
 \item{p}{an object of class \code{ggplot}.}
@@ -84,6 +84,7 @@ Examples section).
 }
 \examples{
 # sparse weighted k-means on mixed data
+\donttest{
 data(HDdata)
 out <- sparsewkm(X = HDdata[,-14], centers = 2)
 plot(out, what = "weights.features")
@@ -95,7 +96,6 @@ plot(out, what = "w.expl.var")
 plot(out, what = "pen.crit")
 # plot the regularization paths for first three variables only 
 plot(out, what = "weights.features", Which=1:3)
- 
  
 # group sparse weighted k-means on numerical data
 data(iris)
@@ -110,6 +110,7 @@ plot(out, what = "w.expl.var")
 plot(out, what = "pen.crit")
 # plot the regularization paths for the variables in the first group only
 plot(out, what = "weights.features", Which=1)
+}
 }
 \references{
 M., Chavent, J. Lacaille, A. Mourer, and M. Olteanu (2020). 

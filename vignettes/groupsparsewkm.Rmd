@@ -19,7 +19,7 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,eval=TRUE,fig.align="center",fig.width = 7,fig.height = 5)
-options(digits = 2)
+old <- options(digits = 2)
 ```
 $\DeclareMathOperator{\R}{\mathbb{R}}$
 
@@ -79,7 +79,15 @@ The number of clusters, `centers` is fixed to 8, based on the additional prior k
 
 All features are scaled to have zero mean and unit variance with the default setting of the `groupsparsewkm` function.
 
-```{r,  message=FALSE, warning=FALSE}
+\donttest{
+```{r,  message=FALSE, warning=FALSE, echo = T}
+set.seed(1407)
+res.mice <- groupsparsewkm(X = DataMice[,(1:length(index))], centers = 8, index = index, verbose = 1)
+```
+}
+
+
+```{r,  eval = F}
 set.seed(1407)
 res.mice <- groupsparsewkm(X = DataMice[,(1:length(index))], centers = 8, index = index, verbose = 1)
 ```
@@ -128,6 +136,7 @@ plot(res.mice, what = "weights.groups", Which=c(1,2,30))
 plot(res.mice, what = "weights.features", Which=c(1,2,30))
 ```
 
+
 #### Additional plots 
 
 A valuable piece of information is given by the number of selected groups or the number of selected features for a given value of the regularization parameter `lambda`. The evolution of the number of features may be graphically illustrated as follows: 
@@ -167,11 +176,14 @@ Other criteria such as the gap statistic could be efficiently used for selecting
 As mentioned above, the `DataMice` observations are known to belong to some priorly defined clusters, defined by the `Genotype`, `Treatment` or `Behaviour`. In order to compare the resulting clusterings of the group-sparse algorithm (for the various values of `lambda`) with the priorly defined clusters, the Adjusted Rand Index (ARI) is computed here below.
 
 ```{r, message=FALSE}
-library(mclust)
-sapply(1:length(res.mice$lambda), function(x) {adjustedRandIndex(res.mice$cluster[,x],DataMice$Class.mouse)})
-sapply(1:length(res.mice$lambda), function(x) {adjustedRandIndex(res.mice$cluster[,x],DataMice$Genotype)})
-sapply(1:length(res.mice$lambda), function(x) {adjustedRandIndex(res.mice$cluster[,x],DataMice$Treatment)})
-sapply(1:length(res.mice$lambda), function(x) {adjustedRandIndex(res.mice$cluster[,x],DataMice$Behaviour)})
+sapply(1:length(res.mice$lambda), function(x) {mclust::adjustedRandIndex(res.mice$cluster[,x],DataMice$Class.mouse)})
+sapply(1:length(res.mice$lambda), function(x) {mclust::adjustedRandIndex(res.mice$cluster[,x],DataMice$Genotype)})
+sapply(1:length(res.mice$lambda), function(x) {mclust::adjustedRandIndex(res.mice$cluster[,x],DataMice$Treatment)})
+sapply(1:length(res.mice$lambda), function(x) {mclust::adjustedRandIndex(res.mice$cluster[,x],DataMice$Behaviour)})
+```
+ 
+```{r, include=FALSE}
+options(old)
 ```
  
 According to the above values, the 8 clusters computed with the sparse-group $k$-means algorithm are not much related to the 8 priorly defined clusters. As we've already mentioned, there is no prior reason for correlation between the clustering output and the partitioning defined by the `Genotype`, the `Treatment` and the `Behaviour`. The clusters identified by the algorithm may correspond to a completely different structure in the data. Nevertheless, we should mention here that the proteins identified by the algorithm as the 

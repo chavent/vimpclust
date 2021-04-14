@@ -1,19 +1,19 @@
-#' @export
-#' @name plot.spwkm
 #' @title  Plots from a "spwkm" object 
+#' @export
+#'
 #' @description Produces several graphics to help interpreting a \code{spwkm} object.
 #'
-#' @param x an object of class \code{spwkm}.
-#' @param what a character string indicating which element of \code{x} to be plotted. See section
+#' @param x An object of class \code{spwkm}.
+#' @param what A character string indicating which element of \code{x} to be plotted. See section
 #' "Details" below for further information.  
-#' @param Which a numerical vector indexing the groups or the variables to be displayed. See section
+#' @param Which A numerical vector indexing the groups or the variables to be displayed. See section
 #' "Details" below for further information.   
-#' @param xtitle the title of the x-axis.
-#' @param ytitle the title of the y-axis.
-#' @param title the title of the graphic.
-#' @param showlegend a boolean. If \code{showlegend=NULL} (default value), the legend is displayed.
-#' @param legendtitle the title of the legend.
-#' @param \ldots arguments to be passed to methods, not used here.
+#' @param xtitle The title of the x-axis.
+#' @param ytitle The title of the y-axis.
+#' @param title The title of the graphic.
+#' @param showlegend A boolean. If \code{showlegend=NULL} (default value), the legend is displayed.
+#' @param legendtitle The title of the legend.
+#' @param ... Further arguments to the \code{plot} function.
 #' 
 #' @return \item{p}{an object of class \code{ggplot}.}
 #'
@@ -63,6 +63,7 @@
 #' 
 #' @examples
 #' # sparse weighted k-means on mixed data
+#' \donttest{
 #' data(HDdata)
 #' out <- sparsewkm(X = HDdata[,-14], centers = 2)
 #' plot(out, what = "weights.features")
@@ -74,7 +75,6 @@
 #' plot(out, what = "pen.crit")
 #' # plot the regularization paths for first three variables only 
 #' plot(out, what = "weights.features", Which=1:3)
-#'  
 #'  
 #' # group sparse weighted k-means on numerical data
 #' data(iris)
@@ -89,14 +89,13 @@
 #' plot(out, what = "pen.crit")
 #' # plot the regularization paths for the variables in the first group only
 #' plot(out, what = "weights.features", Which=1)
-
+#' }
 #' @import ggplot2 Polychrome
 
 plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, ytitle = NULL, 
                            title = NULL, showlegend = NULL, 
                            legendtitle = NULL, ...) 
 {
-  lambda <- weights <- group <- color <- sel.groups <- line.type <- sel.features <- NULL
   if (!inherits(x, "spwkm")) 
     stop("Use only with \"spwkm\" objects")
   if (x$type=="NumGroupSparse")
@@ -127,9 +126,9 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         showlegend = T
       if (is.null(legendtitle)) 
         legendtitle = "Group of features"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=weights, group=as.factor(group))) +
-        geom_line(aes(color=color))+
-        geom_point(aes(color=color))+
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$weights, group=as.factor(.data$group))) +
+        geom_line(aes(color=.data$color))+
+        geom_point(aes(color=.data$color))+
         scale_colour_manual("", values=colors.groups[Which], labels=rownames(x$Wg)[Which]) +
         xlab(xtitle)+ylab(ytitle)+
         labs(color = legendtitle, linetype = legendtitle)+ggtitle(title)
@@ -159,7 +158,8 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         showlegend = T
       if (is.null(legendtitle)) 
         legendtitle = "Features"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=weights, group=as.factor(group), color=color)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$weights, group=as.factor(.data$group), 
+                                  color=.data$color)) +
         geom_line()+ geom_point()+
         scale_colour_manual("", values=colors.groups[unique(data.to.plot$color)], 
                             labels= paste("Group ", unique(data.to.plot$color), sep=""))+
@@ -177,7 +177,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         ytitle = "Number of selected groups"
       if (is.null(title)) 
         title = "Selected groups path"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=sel.groups)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$sel.groups)) +
         geom_line()+geom_point()+xlab(xtitle)+ylab(ytitle)+ggtitle(title)
       return(p)
     }
@@ -190,7 +190,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         ytitle = "Number of selected features"
       if (is.null(title)) 
         title = "Selected features path"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=sel.features)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$sel.features)) +
         geom_line()+geom_point()+xlab(xtitle)+ylab(ytitle)+ggtitle(title)
       return(p)
     }
@@ -203,7 +203,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         ytitle = "Explained variance"
       if (is.null(title)) 
         title = "Explained variance path"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=bss)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$bss)) +
         geom_line()+geom_point()+xlab(xtitle)+ylab(ytitle)+ggtitle(title)
       return(p)
     }
@@ -218,7 +218,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         ytitle = "Penalized weigthed between-class variance"
       if (is.null(title)) 
         title = "Penalized criterion path"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=penalized.criterion)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$penalized.criterion)) +
         geom_line()+geom_point()+xlab(xtitle)+ylab(ytitle)+ggtitle(title)
       return(p)
     }
@@ -232,7 +232,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         ytitle = "Explained weighted variance"
       if (is.null(title)) 
         title = "Explained weighted-variance path"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=bss)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$bss)) +
         geom_line()+geom_point()+xlab(xtitle)+ylab(ytitle)+ggtitle(title)
       return(p)
     }
@@ -270,9 +270,9 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         showlegend = T
       if (is.null(legendtitle)) 
         legendtitle = ""
-      p <- ggplot(data.to.plot, aes(x=lambda, y=weights, 
-                               linetype=interaction(color, line.type),
-                               col=interaction(line.type, color))) +
+      p <- ggplot(data.to.plot, aes(x=.data$lambda, y=.data$weights, 
+                               linetype=interaction(.data$color, .data$line.type),
+                               col=interaction(.data$line.type, .data$color))) +
         geom_line() +
         geom_point() +
         scale_colour_manual("", values=colors.groups[Which], labels=rownames(x$W)[Which]) +
@@ -309,8 +309,8 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         showlegend = T
       if (is.null(legendtitle)) 
         legendtitle = ""
-      p <- ggplot2::ggplot(data.to.plot, aes(x=lambda, y=weights,  group=as.factor(group),
-                                    col=color)) +
+      p <- ggplot(data.to.plot, aes(x=.data$lambda, y=.data$weights,  group=as.factor(.data$group),
+                                    col=.data$color)) +
         geom_line(linetype="dotted") +
         geom_point() +
         scale_colour_manual("", values=colors.groups[which(summary(data.to.plot$color)>0)], 
@@ -330,7 +330,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         ytitle = "Number of selected features"
       if (is.null(title)) 
         title = "Selected features path"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=sel.groups)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$sel.groups)) +
         geom_line()+geom_point()+xlab(xtitle)+ylab(ytitle)+ggtitle(title)
       return(p)
     }
@@ -343,7 +343,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         ytitle = "Number of selected levels"
       if (is.null(title)) 
         title = "Selected levels path"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=sel.features)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$sel.features)) +
         geom_line()+geom_point()+xlab(xtitle)+ylab(ytitle)+ggtitle(title)
       return(p)
     }
@@ -356,7 +356,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         ytitle = "Explained variance"
       if (is.null(title)) 
         title = "Explained variance path"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=bss)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$bss)) +
         geom_line()+geom_point()+xlab(xtitle)+ylab(ytitle)+ggtitle(title)
       return(p)
     }
@@ -371,7 +371,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         ytitle = "Penalized weigthed between-class variance"
       if (is.null(title)) 
         title = "Penalized criterion path"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=penalized.criterion)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$penalized.criterion)) +
         geom_line()+geom_point()+xlab(xtitle)+ylab(ytitle)+ggtitle(title)
       return(p)
     }
@@ -385,7 +385,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         ytitle = "Explained weighted variance"
       if (is.null(title)) 
         title = "Explained weighted-variance path"
-      p<-ggplot(data.to.plot, aes(x=lambda, y=bss)) +
+      p<-ggplot(data.to.plot, aes(x=.data$lambda, y=.data$bss)) +
         geom_line()+geom_point()+xlab(xtitle)+ylab(ytitle)+ggtitle(title)
       return(p)
     }

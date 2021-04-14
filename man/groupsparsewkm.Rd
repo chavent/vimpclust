@@ -105,6 +105,7 @@ data(iris)
 # "Petal.Length" and "Petal.Width"  in group 2
 index <- c(1, 2, 1, 2)
 # group-sparse k-means
+\donttest{
 out <- groupsparsewkm(X = iris[,-5], centers = 3, index = index)
 # grid of regularization parameters
 out$lambda
@@ -129,6 +130,7 @@ out <- groupsparsewkm(X = iris[,-5], centers = 3)
 # group weights and variable weights are identical in this case
 out$Wg 
 out$W
+}
 }
 \references{
 Witten, D. M., & Tibshirani, R. (2010). A framework for feature 

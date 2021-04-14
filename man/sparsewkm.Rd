@@ -115,6 +115,7 @@ categorical variables.
 }
 \examples{
 data(HDdata)
+\donttest{
 out <- sparsewkm(X = HDdata[,-14], centers = 2)
 # grid of automatically selected regularization parameters
 out$lambda
@@ -131,6 +132,7 @@ out$sel.init.feat
 out$bss.per.feature[,k]
 # between-class variance
 sum(out$bss.per.feature[,k])
+}
 }
 \references{
 Witten, D. M., & Tibshirani, R. (2010). A framework for feature 

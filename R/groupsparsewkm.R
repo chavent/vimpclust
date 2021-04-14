@@ -75,6 +75,7 @@
 #' # "Petal.Length" and "Petal.Width"  in group 2
 #' index <- c(1, 2, 1, 2)
 #' # group-sparse k-means
+#' \donttest{
 #' out <- groupsparsewkm(X = iris[,-5], centers = 3, index = index)
 #' # grid of regularization parameters
 #' out$lambda
@@ -99,6 +100,7 @@
 #' # group weights and variable weights are identical in this case
 #' out$Wg 
 #' out$W
+#' }
 
  
 
@@ -107,7 +109,6 @@ groupsparsewkm <- function(X, centers, lambda = NULL, nlambda = 20,
                            nstart = 10, itermaxw = 20, itermaxkm = 10, 
                            scaling = TRUE, verbose = 1, epsilonw = 1e-04) 
 {
-    #options(digits = 3)
     call <- match.call()
     check_fun_groupsparsw(X, lambda, nlambda, index, sizegroup, itermaxw, scaling, verbose)
     

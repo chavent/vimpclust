@@ -19,7 +19,7 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,eval=TRUE,fig.align="center",fig.width = 7,fig.height = 5)
-options(digits = 2)
+old <- options(digits = 2)
 ```
 $\DeclareMathOperator{\R}{\mathbb{R}}$
 
@@ -58,7 +58,13 @@ head(HDdata)
 
 The `sparsewkm` function is applied to `HDdata` on all features except the last one, `HD`, which codes for the presence or the absence of a heart disease. `HD` was removed from the clustering, and will be used later as a control variable. Since the control variable has only two classes, the number of clusters is set to 2 with the argument `centers`. We shall check after the clustering procedure whether the algorithm retrieves these two classes.
 
-```{r}
+\donttest{
+```{r, echo = FALSE, eval = TRUE}
+res <- sparsewkm(X = HDdata[,-14], centers = 2)
+```
+}
+
+```{r, echo = TRUE, eval = FALSE}
 res <- sparsewkm(X = HDdata[,-14], centers = 2)
 ```
 
@@ -165,6 +171,10 @@ Eventually, once one selects an appropriate regularization parameter `lambda` an
 
 ```{r}
 info_clust(res, 5, X = HDdata)
+```
+
+```{r, include=FALSE}
+options(old)
 ```
 
 # Bibliography

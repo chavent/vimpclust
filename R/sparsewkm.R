@@ -1,9 +1,3 @@
-#' @importFrom stats aggregate
-#' @importFrom stats kmeans
-#' @importFrom stats rnorm
-#' @importFrom grDevices colorRampPalette
-NULL
-
 #' @title Sparse weighted k-means
 #' @export
 #'
@@ -91,9 +85,10 @@ NULL
 #' 
 #' @seealso \code{\link{plot.spwkm}}, \code{\link{info_clust}}, 
 #' \code{\link{groupsparsewkm}}, \code{\link{recodmix}}
-#' 
+#'
 #'@examples
 #' data(HDdata)
+#' \donttest{
 #' out <- sparsewkm(X = HDdata[,-14], centers = 2)
 #' # grid of automatically selected regularization parameters
 #' out$lambda
@@ -110,7 +105,7 @@ NULL
 #' out$bss.per.feature[,k]
 #' # between-class variance
 #' sum(out$bss.per.feature[,k])
-
+#' }
 
 sparsewkm <- function(X, centers, lambda = NULL, nlambda = 20, nstart = 10, 
                       itermaxw = 20, itermaxkm = 10, renamelevel = TRUE, 
