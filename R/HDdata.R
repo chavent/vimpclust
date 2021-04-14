@@ -6,7 +6,7 @@
 #'@format A data frame of 270 rows (patients) and 14 columns (variables):
 #'@field age Numerical. Age in years.
 #'@field resting_blood_pressure(trestbps) Numerical. Resting blood pressure (in mmHg) at hospital admittance.
-#'@filed serum_cholesterol(chol) Numerical. Serum cholesterol in mg/dl.
+#'@field serum_cholesterol(chol) Numerical. Serum cholesterol in mg/dl.
 #'@field maximum_heart_rate_achieved(maxhr). Numerical. Maximum heart rate achieved during exercise.
 #'@field oldpeak Numerical. ST depression induced by exercise relative to rest.
 #'@field number_of_major_vessels_colored_by_fluoroscopy(numv) Numerical. Number of major vessels (0-3) colored by fluoroscopy.

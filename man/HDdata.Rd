@@ -24,6 +24,8 @@ variables and eight categorical variables.
 
 \item{\code{resting_blood_pressure(trestbps)}}{Numerical. Resting blood pressure (in mmHg) at hospital admittance.}
 
+\item{\code{serum_cholesterol(chol)}}{Numerical. Serum cholesterol in mg/dl.}
+
 \item{\code{maximum_heart_rate_achieved(maxhr).}}{Numerical. Maximum heart rate achieved during exercise.}
 
 \item{\code{oldpeak}}{Numerical. ST depression induced by exercise relative to rest.}
