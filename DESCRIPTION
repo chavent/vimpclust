@@ -24,7 +24,7 @@ Description: An implementation of methods related to sparse clustering and varia
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.1
 Imports: 
     PCAmixdata,
     ggplot2,

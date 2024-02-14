@@ -112,11 +112,18 @@ check_b <- function(b) {
         stop("b must be numerical.")
 }
 
-check_maxlambda <- function(lambda, maxlam) {
+# check_maxlambda <- function(lambda, maxlam) {
+#     # lambda
+#     if (!is.null(lambda)) 
+#         if (sum(lambda > maxlam) > 0) 
+#             stop(paste0("Lambda must be in [0;", maxlam, "]"))
+# }
+
+check_maxlambda <- function(lambda) {
     # lambda
     if (!is.null(lambda)) 
-        if (sum(lambda > maxlam) > 0) 
-            stop(paste0("Lambda must be in [0;", maxlam, "]"))
+        if (sum(lambda > 1) > 0) 
+            stop(paste0("Lambda must be in [0;1]"))
 }
 
 check_w <- function(w) {

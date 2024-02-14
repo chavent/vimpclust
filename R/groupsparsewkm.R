@@ -109,86 +109,101 @@ groupsparsewkm <- function(X, centers, lambda = NULL, nlambda = 20,
                            nstart = 10, itermaxw = 20, itermaxkm = 10, 
                            scaling = TRUE, verbose = 1, epsilonw = 1e-04) 
 {
-    call <- match.call()
-    check_fun_groupsparsw(X, lambda, nlambda, index, sizegroup, itermaxw, scaling, verbose)
+  call <- match.call()
+  check_fun_groupsparsw(X, lambda, nlambda, index, sizegroup, itermaxw, scaling, verbose)
+  
+  X <- as.matrix(scale(X, center = scaling, scale = scaling))
+  
+  X <- X[,order(index)]
+  index <- sort(index)
+  
+  km <- stats::kmeans(X, centers, nstart, itermaxkm)
+  clusterini <- km$cluster
+  bss.per.featureini <- weightedss(X, clusterini)$bss.per.feature/nrow(X)
+  maxlam <-  max(stats::aggregate(bss.per.featureini, by=list(index), function(x){norm.vect(x)/sqrt(length(x))})[,2])
+  #check_maxlambda(lambda, maxlam)
+  check_maxlambda(lambda)
+  
+  
+  if (is.null(lambda)) 
+    lambda <- seq(from = 0, to = (maxlam - 0.001), length.out = nlambda) 
+  
+  # loop over lambda
+  ls <- sapply(lambda, FUN = function(i) {
     
-    X <- as.matrix(scale(X, center = scaling, scale = scaling))
-    
-    X <- X[,order(index)]
-    index <- sort(index)
-    
-    km <- stats::kmeans(X, centers, nstart, itermaxkm)
-    clusterini <- km$cluster
-    bss.per.featureini <- weightedss(X, clusterini)$bss.per.feature/nrow(X)
-    maxlam <-  max(stats::aggregate(bss.per.featureini, by=list(index), function(x){norm.vect(x)/sqrt(length(x))})[,2])
-    check_maxlambda(lambda, maxlam)
-   
-    
-    if (is.null(lambda)) 
-        lambda <- seq(from = 0, to = (maxlam - 0.001), length.out = nlambda) 
-    
-    # loop over lambda
-    ls <- sapply(lambda, FUN = function(i) {
-        
-        # loop over w
-        cluster1 <- clusterini
-        bss.per.feature <- bss.per.featureini
-        w1 <- rep(1/ncol(X), ncol(X))  # initialization of w1 / w1 gives the weight at the i+1 iterations
-        w0 <- abs(stats::rnorm(ncol(X)))
-        W_cl <- list()
-        niter <- 1
-        while (sum(abs(w1 - w0))/sum(abs(w0)) > epsilonw && niter < itermaxw) {
-            if (niter != 1) {
-                Xw <- t(t(X)*sqrt(w1))
-                km <- stats::kmeans(Xw, centers, nstart = nstart, iter.max = itermaxkm)
-                cluster1 <- km$cluster
-                bss.per.feature <- weightedss(X, cluster1)$bss.per.feature/nrow(X)
-            }
-            w0 <- w1
-            cluster0 <- cluster1
-            # Soft thresholding operator
-            w1 <- groupsoft(bss.per.feature, i, index, sizegroup)
-            if (norm.vect(w1)==0)
-              niter <- itermaxw
-            niter = niter + 1
-        }  # end loop over w
-        if (verbose == 1) 
-            if (niter >= itermaxw) 
-                print(paste0("the stopping criterion over w is not satisfied for lambda = ", i)) else
-                               print(paste0("the stopping criterion over w is satisfied for lambda = ", i))  
-        
-        
-        W_cl[[1]] <- w0
-        W_cl[[2]] <- cluster0
-        W_cl[[3]] <- bss.per.feature
-        W_cl
-    })  # end loop over lambda
-    
-    W <- do.call(cbind, (ls[1, ]))
-    cluster <- do.call(cbind, (ls[2, ]))
-    bss.per.feature <- do.call(cbind, (ls[3, ]))
-    
-    rownames(W) <- colnames(X)
-    colnames(W) <- paste("Lambda", 1:length(lambda))
-    
-    Wg <- stats::aggregate(W, by=list(sort(index)), norm.vect)[,-1]
-    Wg <- as.matrix(Wg)
-    rownames(Wg) <- paste("Group", unique(sort(index)))
-    colnames(Wg) <- paste("Lambda", 1:length(lambda))
-    
-    selected.features <- apply(W,2,function(x){sum(x>0)})
-    selected.groups <- apply(Wg,2,function(x){sum(x>0)})
-    
-    rownames(bss.per.feature) <- colnames(X)
-    colnames(bss.per.feature) <- paste("Lambda", 1:length(lambda))
-    
-    rownames(cluster) <- rownames(X)
-    colnames(cluster)  <- paste("Lambda", 1:length(lambda))
-    
-    out <- list(call = call, type="NumGroupSparse", lambda = lambda, W = W, Wg = Wg, 
-                 cluster = cluster,   sel.feat= selected.features, 
-                sel.groups=selected.groups,
-                 Z = X, index = index, bss.per.feature = bss.per.feature)
-    class(out) <- "spwkm"
-    return(out)
+    # loop over w
+    cluster1 <- clusterini
+    bss.per.feature <- bss.per.featureini
+    w1 <- rep(1/ncol(X), ncol(X))  # initialization of w1 / w1 gives the weight at the i+1 iterations
+    w0 <- abs(stats::rnorm(ncol(X)))
+    W_cl <- list()
+    niter <- 1
+    while (sum(abs(w1 - w0))/sum(abs(w0)) > epsilonw && niter < itermaxw) {
+      if (niter != 1) {
+        Xw <- t(t(X)*sqrt(w1))
+        km <- stats::kmeans(Xw, centers, nstart = nstart, iter.max = itermaxkm)
+        cluster1 <- km$cluster
+        bss.per.feature <- weightedss(X, cluster1)$bss.per.feature/nrow(X)
+      }
+      w0 <- w1
+      cluster0 <- cluster1
+      # Soft thresholding operator
+      w1 <- groupsoft(bss.per.feature, i, index, sizegroup)
+      if (norm.vect(w1)==0)
+        niter <- itermaxw
+      niter = niter + 1
+    }  # end loop over w
+    if (verbose == 1) 
+      # if (niter >= itermaxw) 
+      #   print(paste0("the stopping criterion over w is not satisfied for lambda = ", i)) else
+      #     print(paste0("the stopping criterion over w is satisfied for lambda = ", i)) 
+    {
+      if (niter == itermaxw+1) 
+        print(paste0("all the feature weights a set to 0 for lambda = ", i))
+      if (niter == itermaxw) 
+        print(paste0("the stopping criterion over w is not satisfied for lambda = ", i))  
+      if (niter < itermaxw) 
+        print(paste0("the stopping criterion over w is satisfied for lambda = ", i))  
+    }
+    #W_cl[[1]] <- w0
+    W_cl[[1]] <- w1
+    if (niter == itermaxw+1)
+    {
+      W_cl[[2]] <- rep(NA, length(cluster0))
+      W_cl[[3]] <- rep(NA, length(bss.per.feature))
+    } else
+    {
+      W_cl[[2]] <- cluster0
+      W_cl[[3]] <- bss.per.feature
+    }
+    W_cl
+  })  # end loop over lambda
+  
+  W <- do.call(cbind, (ls[1, ]))
+  cluster <- do.call(cbind, (ls[2, ]))
+  bss.per.feature <- do.call(cbind, (ls[3, ]))
+  
+  rownames(W) <- colnames(X)
+  colnames(W) <- paste("Lambda", 1:length(lambda))
+  
+  Wg <- stats::aggregate(W, by=list(sort(index)), norm.vect)[,-1]
+  Wg <- as.matrix(Wg)
+  rownames(Wg) <- paste("Group", unique(sort(index)))
+  colnames(Wg) <- paste("Lambda", 1:length(lambda))
+  
+  selected.features <- apply(W,2,function(x){sum(x>0)})
+  selected.groups <- apply(Wg,2,function(x){sum(x>0)})
+  
+  rownames(bss.per.feature) <- colnames(X)
+  colnames(bss.per.feature) <- paste("Lambda", 1:length(lambda))
+  
+  rownames(cluster) <- rownames(X)
+  colnames(cluster)  <- paste("Lambda", 1:length(lambda))
+  
+  out <- list(call = call, type="NumGroupSparse", lambda = lambda, W = W, Wg = Wg, 
+              cluster = cluster,   sel.feat= selected.features, 
+              sel.groups=selected.groups,
+              Z = X, index = index, bss.per.feature = bss.per.feature)
+  class(out) <- "spwkm"
+  return(out)
 }
