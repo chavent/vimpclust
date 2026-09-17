@@ -93,8 +93,8 @@
 #' @import ggplot2 Polychrome
 
 plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, ytitle = NULL, 
-                           title = NULL, showlegend = NULL, 
-                           legendtitle = NULL, ...) 
+                       title = NULL, showlegend = NULL, 
+                       legendtitle = NULL, ...) 
 {
   if (!inherits(x, "spwkm")) 
     stop("Use only with \"spwkm\" objects")
@@ -109,7 +109,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
       data.to.plot <- data.frame(weights=c(t(x$Wg)), lambda=rep(x$lambda, length(unique(x$index))), 
                                  group=rep(rownames(x$Wg), each=length(x$lambda)),
                                  color=as.factor(rep(1:length(unique(x$index)), 
-                                                           each=length(x$lambda))))
+                                                     each=length(x$lambda))))
       color.count <- length(unique(x$index))
       if (is.null(Which)==FALSE)
       {data.to.plot <- data.to.plot[data.to.plot$color%in%Which,]} else 
@@ -134,7 +134,7 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
         labs(color = legendtitle, linetype = legendtitle)+ggtitle(title)
       if (showlegend==F)
         p <- p + theme(legend.position="none")
-        return(p)
+      return(p)
     }
     if (what=="weights.features")
     {
@@ -251,12 +251,12 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
                                  color=as.factor(rep(1:length(unique(x$index)), 
                                                      each=length(x$lambda))),
                                  line.type=as.factor(rep(as.numeric(summary(as.factor(x$index))>1)*2+1,
-                                                     each=length(x$lambda))))
-        
+                                                         each=length(x$lambda))))
+      
       color.count <- length(unique(x$index))
       line.groups <- as.numeric(summary(as.factor(x$index))>1)*2+1
       if (is.null(Which)==FALSE)
-        {data.to.plot <- data.to.plot[data.to.plot$color%in%Which,]} else 
+      {data.to.plot <- data.to.plot[data.to.plot$color%in%Which,]} else 
         Which <- unique(x$index)
       get.palette <-  grDevices::colorRampPalette(glasbey.colors(n=32))
       colors.groups <- get.palette(color.count)
@@ -271,8 +271,8 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
       if (is.null(legendtitle)) 
         legendtitle = ""
       p <- ggplot(data.to.plot, aes(x=.data$lambda, y=.data$weights, 
-                               linetype=interaction(.data$color, .data$line.type),
-                               col=interaction(.data$line.type, .data$color))) +
+                                    linetype=interaction(.data$color, .data$line.type),
+                                    col=interaction(.data$line.type, .data$color))) +
         geom_line() +
         geom_point() +
         scale_colour_manual("", values=colors.groups[Which], labels=rownames(x$W)[Which]) +
@@ -282,14 +282,14 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
       if (showlegend==F)
         p <- p + theme(legend.position="none")
       return(p)
-       
+      
     }
     if (what=="weights.levels")
     {
       data.to.plot <- data.frame(weights=c(t(x$Wm)), lambda=rep(x$lambda, dim(x$Wm)[1]), 
                                  group=rep(rownames(x$Wm), each=length(x$lambda)), 
                                  feature=as.factor(rep(x$index, 
-                                                     each=length(x$lambda))),
+                                                       each=length(x$lambda))),
                                  color=as.factor(rep(1:length(x$index), 
                                                      each=length(x$lambda))))
       if (is.null(Which)==FALSE)
@@ -390,5 +390,94 @@ plot.spwkm <- function(x, what="weights.features", Which=NULL, xtitle =NULL, yti
       return(p)
     }
   }
+  
+  if (x$type=="L0Sparse")
+  {
+    if (what=="weights.groups")
+      stop("The implementation does not allow to perform group-sparse k-means on mixed data yet!")
+    if (what=="sel.groups")
+      stop("The implementation does not allow to perform group-sparse k-means on mixed data yet!")
+    if (what=="pen.crit")
+      stop("This plot is not available with L0 penalization")
+    if (what=="weights.features")
+    {
+      data.to.plot <- data.frame(weights=c(t(x$W)), grid=rep(x$grid, length(unique(x$index))), 
+                                 feature=rep(rownames(x$W), each=length(x$grid)),
+                                 color=as.factor(rep(1:length(unique(x$index)), 
+                                                     each=length(x$grid))),
+                                 line.type=as.factor(rep(as.numeric(summary(as.factor(x$index))>1)*2+1,
+                                                         each=length(x$grid))))
+      
+      color.count <- length(unique(x$index))
+      line.groups <- as.numeric(summary(as.factor(x$index))>1)*2+1
+      if (is.null(Which)==FALSE)
+      {data.to.plot <- data.to.plot[data.to.plot$color%in%Which,]} else 
+        Which <- unique(x$index)
+      get.palette <-  grDevices::colorRampPalette(glasbey.colors(n=32))
+      #get.palette <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(8, "Set2"))
+      colors.groups <- get.palette(color.count)
+      if(is.null(xtitle)) {
+        if (x$mode == "s") xtitle = "s"
+        if (x$mode == "lambda") xtitle = "lambda"
+      }
+      if(is.null(ytitle))
+        ytitle = "Features weights"
+      if (is.null(title)) 
+        title = "Features - regularization paths"
+      if(is.null(showlegend))
+        showlegend = T
+      if (is.null(legendtitle)) 
+        legendtitle = ""
+      p <- ggplot(data.to.plot, aes(x=.data$grid, y=.data$weights, 
+                                    linetype=interaction(.data$color, .data$line.type),
+                                    col=interaction(.data$line.type, .data$color))) +
+        geom_line() +
+        geom_point() +
+        scale_colour_manual("", values=colors.groups[Which], labels=rownames(x$W)[Which]) +
+        scale_linetype_manual("", values=line.groups[Which], labels=rownames(x$W)[Which])+
+        xlab(xtitle)+ylab(ytitle) +
+        labs(title=legendtitle) + ggtitle(title) 
+      if  (x$mode == "s") p <- p + scale_x_reverse()
+      if (showlegend==F)
+        p <- p + theme(legend.position="none")
+      return(p)
+    }
+    if (what=="expl.var")
+    {
+      data.to.plot <- data.frame(bss=apply(x$bss.per.feature, 2, sum)/dim(x$W)[1], grid=x$grid)
+      if (is.null(xtitle)) {
+        if (x$mode == "s") xtitle = "s"
+        if (x$mode == "lambda") xtitle = "lambda"
+      }
+      if(is.null(ytitle))
+        ytitle = "Explained variance"
+      if (is.null(title)) 
+        title = "Explained variance path"
+      p <- ggplot(data.to.plot, aes(x=.data$grid, y=.data$bss)) +
+        geom_line() + geom_point() + xlab(xtitle) + ylab(ytitle) + 
+        ggtitle(title) 
+      if  (x$mode == "s") p <- p + scale_x_reverse()
+      return(p)
+    } 
+    if (what=="w.expl.var")
+    {
+      bss <- sapply(1:length(x$grid), function(i){sum(x$W[,i]*x$bss.per.feature[,i])})/apply(x$W,2,sum)
+      data.to.plot <- data.frame(bss, grid=x$grid)
+      if(is.null(xtitle)) {
+        if (x$mode == "s") xtitle = "s"
+        if (x$mode == "lambda") xtitle = "lambda"
+      }
+      if(is.null(ytitle))
+        ytitle = "Explained weighted variance"
+      if (is.null(title)) 
+        title = "Explained weighted-variance path"
+      p <- ggplot(data.to.plot, aes(x=.data$grid, y=.data$bss)) +
+        geom_line() + geom_point() + xlab(xtitle) + ylab(ytitle) + ggtitle(title) 
+      if  (x$mode == "s") p <- p + scale_x_reverse()
+      return(p)
+    }
+  }
+  
+  
 }
 

@@ -1,7 +1,7 @@
 Package: vimpclust
 Type: Package
 Title: Variable Importance in Clustering
-Version: 0.1.0
+Version: 0.3.0
 Authors@R: c(person(given = "Alex",
            family = "Mourer",
            role = "aut",
@@ -24,15 +24,15 @@ Description: An implementation of methods related to sparse clustering and varia
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
+Depends: R (>= 3.5.0)
 Imports: 
     PCAmixdata,
     ggplot2,
-    Polychrome,
-    mclust,
-    rlang
+    Polychrome
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    mclust
 VignetteBuilder: knitr,
                  rmarkdown

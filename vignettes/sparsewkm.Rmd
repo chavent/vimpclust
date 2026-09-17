@@ -153,8 +153,8 @@ If one prefers to discard most of the features, she may keep `maxhr` and `oldpea
 Since we have a control variable for the `HDdata`, we shall use it to compare three clustering produced by the algorithm, for three different values of `lambda`. The comparison criterion chosen here is the Adjusted Rand Index (ARI). We shall also display the confusion matrices for the first, fifth and sixth values of `lambda`.
 
 ```{r, message=FALSE}
-library(mclust)
-sapply(c(1,5,6), function(x) {adjustedRandIndex(res$cluster[,x],HDdata$HD)})
+#library(mclust)
+#sapply(c(1,5,6), function(x){mclust::adjustedRandIndex(res$cluster[,x],HDdata$HD)})
 table(HDdata$HD, res$cluster[,1])
 table(HDdata$HD, res$cluster[,5])
 table(HDdata$HD, res$cluster[,6])
