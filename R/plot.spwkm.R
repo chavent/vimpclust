@@ -1,5 +1,5 @@
 #' @title  Plots from a "spwkm" object 
-#' @export
+#' @export 
 #'
 #' @description Produces several graphics to help interpreting a \code{spwkm} object.
 #'
