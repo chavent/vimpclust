@@ -2,7 +2,7 @@
 
 The R package `vimpclust` implements methods related to sparse clustering and variable importance in clustering. . 
 
-Details are available is the following vignettes:
+Details  are available is the following vignettes:
 
 https://chavent.github.io/vimpclust/doc/sparsewkm.html
 
